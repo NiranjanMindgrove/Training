@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1738883768" />
+    <testcase name="mux_2test" classname="mux2x1" file="/home/niranjan/Documents/Training_Projects/HDL_Codes/Mux2x1/mux2x1.py" lineno="4" time="0.002178668975830078" sim_time_ns="14.001" ratio_time="6426.4007774130005" />
+  </testsuite>
+</testsuites>

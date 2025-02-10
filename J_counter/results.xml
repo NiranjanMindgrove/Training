@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1738968150" />
+    <testcase name="jcounter" classname="Jcounter_test" file="/home/niranjan/Documents/Training_Projects/HDL_Codes/J_counter/Jcounter_test.py" lineno="6" time="0.0049130916595458984" sim_time_ns="55.001" ratio_time="11194.784020187315" />
+  </testsuite>
+</testsuites>

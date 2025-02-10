@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1738876838" />
+    <testcase name="and_test" classname="and_test" file="/home/niranjan/Documents/Training_Projects/HDL_Codes/And_Gate/and_test.py" lineno="5" time="0.0014095306396484375" sim_time_ns="4.001" ratio_time="2838.5335426251695" />
+  </testsuite>
+</testsuites>
