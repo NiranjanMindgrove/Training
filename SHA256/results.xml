@@ -1,0 +1,8 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1739291408" />
+    <testcase name="SHA_test" classname="SHA_test" file="/home/niranjan/Documents/Training_Projects/HDL_Codes/SHA256/SHA_test.py" lineno="5" time="0.0013964176177978516" sim_time_ns="1.001" ratio_time="716.8342673723748">
+      <failure />
+    </testcase>
+  </testsuite>
+</testsuites>
