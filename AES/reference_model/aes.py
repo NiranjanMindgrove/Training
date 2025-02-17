@@ -4,17 +4,20 @@ from Crypto.Util.Padding import pad, unpad
 
 ##EAX MODE
 
-data = b'secret data mos '
+data = b'secret data mostly , secret data mostly'
 print(f"Length of Input Data --> {(len(data.hex()))/2} bytes")
 # print(f"Length of input bits --> {len(data) * 8} bits")
 # print(f"Input Data --> {data.hex()}")
 
-key = b'1214586578945612'
+key = b'121458657894561214523698'
 print(f"Value of Key in HEX --> {key.hex()}")
 print(f"Length of key --> {len(key)} bytes")
 
 nonce = get_random_bytes(8)
-print(f"Nonce data value --> {nonce}")
+print(f"Nonce data value --> {nonce.hex()}")
+
+cipher_len = print(f"Length of the cipher text --> {len(data) + 16 - (len(data) % 16)}")
+iv = get_random_bytes(16)
 
 # print(f"Key --> {key.hex()}")
 # print(f"Length of Key --> {len(key)* 8 } bits")
@@ -50,7 +53,7 @@ print(decrypt_ecb)
 print("\n")
 print("=================C=B=C======================Cipher Block Chaining==")
 print("\n")
-iv = get_random_bytes(16)
+
 ci_cbc = AES.new(key,AES.MODE_CBC,iv)
 en_cbc = ci_cbc.encrypt(pad(data,AES.block_size))
 print(en_cbc.hex())
@@ -62,20 +65,20 @@ print("\n")
 print("=================C=F=B======================Cipher FEED BACK==")
 print("\n")
 cipher_cfb = AES.new(key,AES.MODE_CFB, iv)
-encrypt_cfb = cipher_cfb.encrypt(data)
+encrypt_cfb = cipher_cfb.encrypt(pad(data,AES.block_size))
 print(encrypt_cfb.hex())
 print(f"Length of Cipher --> {len(encrypt_cfb)}  bytes ")
 decrypt_cfb = AES.new(key, AES.MODE_CFB, iv)
-dec_cfb = decrypt_cfb.decrypt(encrypt_cfb)
+dec_cfb = unpad(decrypt_cfb.decrypt(encrypt_cfb),AES.block_size)
 print(dec_cfb)
 print("\n")
 print("=================O=F=B======================Output FEED BACK==")
-cipher_ofb = AES.new(key,AES.MODE_OFB, iv)
-encrypt_ofb = cipher_ofb.encrypt(data)
+cipher_ofb = AES.new(key,AES.MODE_OFB,iv)
+encrypt_ofb = cipher_ofb.encrypt(pad((data),AES.block_size))
 print(encrypt_ofb.hex())
 print(f"Length of Cipher --> {len(encrypt_ofb)}  bytes ")
 decrypt_ofb = AES.new(key, AES.MODE_OFB, iv)
-dec_ofb = decrypt_ofb.decrypt(encrypt_ofb)
+dec_ofb = unpad(decrypt_ofb.decrypt(encrypt_ofb),AES.block_size)
 print(dec_ofb)
 print("\n")
 print("=================C=T=R======================Counter Mode==")
