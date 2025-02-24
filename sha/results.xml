@@ -1,6 +1,6 @@
 <testsuites name="results">
   <testsuite name="all" package="all">
-    <property name="random_seed" value="1740154555" />
-    <testcase name="single_chunk" classname="sha_test_run" file="/home/niranjan/Documents/Training_Projects/HDL_Codes/sha/sha_test_run.py" lineno="29" time="0.007058143615722656" sim_time_ns="71.001" ratio_time="10059.443936765303" />
+    <property name="random_seed" value="1740436324" />
+    <testcase name="main" classname="sha_test" file="/home/niranjan/Documents/Training_Projects/HDL_Codes/sha/sha_test.py" lineno="122" time="0.09314966201782227" sim_time_ns="1076.001" ratio_time="11551.314054087812" />
   </testsuite>
 </testsuites>

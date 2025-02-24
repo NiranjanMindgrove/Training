@@ -1,6 +1,6 @@
 <testsuites name="results">
   <testsuite name="all" package="all">
-    <property name="random_seed" value="1738952998" />
-    <testcase name="JK_test" classname="JK_test" file="/home/niranjan/Documents/Training_Projects/HDL_Codes/JK_Flop/JK_test.py" lineno="5" time="0.0037078857421875" sim_time_ns="14.001" ratio_time="3776.0063209876544" />
+    <property name="random_seed" value="1739375706" />
+    <testcase name="JK_test" classname="JK_test" file="/home/niranjan/Documents/Training_Projects/HDL_Codes/JK_Flop/JK_test.py" lineno="5" time="0.00414276123046875" sim_time_ns="14.001" ratio_time="3379.6299668508286" />
   </testsuite>
 </testsuites>

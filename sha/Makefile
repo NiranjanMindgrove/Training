@@ -8,6 +8,6 @@ WARNING_ARGS += -Wno -TIMESCALEMOD -Wno-WIDTH -Wno-UNOPT
 
 
 TOPLEVEL = mksequential_sha_engine
-MODULE = sha_test_run
+MODULE = sha_test
 
 include $(shell cocotb-config --makefiles)/Makefile.sim

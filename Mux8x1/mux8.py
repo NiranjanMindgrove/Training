@@ -4,7 +4,7 @@ from cocotb.clock import Clock
 
 @cocotb.test()
 async def mux_test(dut):
-	for i in range(130):
+	for i in range(128):
 		# dut._log.info(f"{type(dut.inp.value)}")
 		dut.inp.value =  i
 		await Timer(1,units="ns")

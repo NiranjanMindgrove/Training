@@ -1,70 +1,139 @@
 import cocotb
 import cocotb.clock
-from cocotb.triggers import Timer, RisingEdge
+from cocotb.triggers import RisingEdge, FallingEdge
 from cocotb.clock import Clock
 import hashlib
 
-@cocotb.test()
+def encode_message(message):
+    """Encodes a message into a 512-bit integer following the given rules."""
+    message_bits = ''.join(format(ord(c), '08b') for c in message)  # Convert message to binary
+    message_length = len(message_bits)
+    print(f"Message length --> {message_length}")
 
 
-async def input_list(dut):
-    hexa = ""
-    msg_inp = ["This is Mindgrove"]
-    for i in range(len(msg_inp)):
-        for j in range(len(msg_inp[i])):
-            ch = msg_inp[i][j]
-            asci = ord(ch)
-            val  = hex(asci).lstrip('0x').rstrip("L")
-            hexa += val
-        hex_inp.append(hexa)
-        hexa = ""
-    hex_inp = hexa
-    dut._log.info(f"Input message in hex format --> {hex_inp}")
-async def sha_test(dut, input_list):
+    if message_length > 448:
+
+        #Chunks no of 512 bits
+        extra = (message_length+1)%512
+        padding = 448 - extra
+        total_bits = message_length + 1 + padding + 64
+        chunks = total_bits//512
+        print(f"Chunks --> {chunks}")
+
+        # Append '1' to the message bits
+        message_bits += '1'
+        
+        # Pad with '0' until reaching a multiple of 512 bits
+        message_bits = message_bits.ljust( (total_bits-64) , '0')
+        print(f"Message bits --> {message_bits}")
+        
+        # Append 64-bit representation of message length
+        length_bits = format(message_length, '064b')
+        
+        # Combine into a full 512-bit binary string
+        full_bits = message_bits + length_bits
+        print(f"Full bits --> {full_bits}")
+
+    else:
+        # Append '1' to the message bits
+        message_bits += '1'
+        
+        # Pad with '0' until reaching 448 bits
+        message_bits = message_bits.ljust(448, '0')
+        
+        # Append 64-bit representation of message length
+        length_bits = format(message_length, '064b')
+        
+        # Combine into a full 512-bit binary string
+        full_bits = message_bits + length_bits
+
+    chunk_bin = []
+    chunk_int = []
+    print(f"Full bits length --> {len(full_bits)}")
+    for i in range(0, len(full_bits), 512):
+        chunk_bin.append(full_bits[i:i+512]) 
+    for j in range(len(chunk_bin)):
+        chunk_int.append(int(chunk_bin[j], 2))
+    print(chunk_int)
     
-     #Input message 
-    
+    return chunk_int
+
+async def input(test_message,dut):
+    dut._log.info(f"Test message --> {test_message}")
+
+async def reset(dut):
 
     await cocotb.start(Clock(dut.CLK, 1,"ns").start())
+    #Enable pin high to give Reset signal
+    await RisingEdge(dut.CLK)
+    dut.EN_reset.value = 1
+    
+    #In next clock set Reset signal high and turn low in one clock cycle
+    await RisingEdge(dut.CLK)
+    dut.RST_N.value = 0
+    await RisingEdge(dut.CLK)
+    dut.RST_N.value = 1
 
-    for i in range(len(hex_inp)):
-    # hex_inp = "6A09E667BB67AE853C6EF372A54FF53A510E527F9B05688C1F83D9AB5BE0CD19"
-        int_inp = await int(hex_inp(i),16)
-        await Timer(5,units="ns")
-        dut.input_engine_pre_hash.value = int_inp 
-        await Timer(5,units="ns")
-        dut._log.info(f"Initial Hash values in integer format --> {int_inp}")
-        dut._log.info(f"Initial Hash values in Binary format --> {dut.input_engine_pre_hash}")
-        
-        for i in range(2):
-            await RisingEdge(dut.CLK)
-            dut.RST_N.value = i
-            await Timer(1,units="ns")
-            dut._log.info(f"Value of reset --> {dut.RST_N.value}")
+    #In next clock set enable reset signal low
+    await RisingEdge(dut.CLK)
+    dut.EN_reset.value = 0
 
-            await RisingEdge(dut.CLK)
-            dut.EN_input_engine.value = 1
-            dut._log.info(f"Input Datatype --> {type(dut.input_engine_input_val.value)}")
-            message = "This is Mindgrove"
-            message_bytes = message.encode('ascii').ljust(56,b'0')
-            
+async def drive_input(test_message, dut):
 
-            int_value = int.from_bytes(message_bytes, byteorder='big')
-            dut.input_engine_input_val.value = int_value
-            await Timer(5,units="ns")
-            dut._log.info(f"Sent the input message --> {dut.input_engine_input_val.value}")
-            await Timer(2,units="ns")
+    encoded_values = []
+    encoded_values = encode_message(test_message)
+    dut._log.info(f"Encoded values --> {encoded_values}")
 
-            # sha256_code = hashlib.sha256()
-            # input = sha256_code.update(message_bytes)
-            # output = sha256_code.hexdigest()
-            # output_string = bin(int(output, 16))[2:].zfill(len(output) * 4)
+    #Wait for the next clock cycle to set the enable signal for getting the input message
+    await RisingEdge(dut.CLK)
+    out = 0x6a09e667bb67ae853c6ef372a54ff53a510e527f9b05688c1f83d9ab5be0cd19
+    
+    for i in range(len(encoded_values)):
+        dut.EN_input_engine.value = 1
+        dut.input_engine_pre_hash = out
+        dut.input_engine_input_val.value = encoded_values[i]
 
-            
-            dut._log.info(f"The output engine --> {hex(dut.output_engine_get.value)}")
-            # assert dut.result_fifo_D_OUT == output, f"Error --> out : {output_string} obtained_result : {dut.result_fifo_D_OUT} "
+        await RisingEdge(dut.CLK)
+        dut.EN_input_engine.value = 0
+        dut._log.info(f"EN_input_engine: {dut.EN_input_engine.value}")
+    
+        await RisingEdge(dut.RDY_output_engine_get)
+        dut.EN_output_engine_get.value = 1
+        out = dut.output_engine_get.value
 
-            dut.EN_output_engine_get.value = 1
-            dut._log.info(f"The output value --> {dut.output_engine_get.value}")
-        dut._log.info("Test Complete")
-        
+        await FallingEdge(dut.RDY_output_engine_get)
+        dut.EN_output_engine_get.value = 0
+    out = bin(out) #Changing the output to binary format for comparison
+    dut._log.info(f"Actual output --> {out}")
+    return out
+    
+async def reference_out(test_message,dut):
+    sha256_code = hashlib.sha256()
+    input = sha256_code.update(test_message.encode())
+    output = sha256_code.hexdigest()
+    output = bin(int(output,16))
+    dut._log.info(f"""Reference out --> {output} """)
+    return output
+
+async def scoreboard(out,output):
+    assert out == output, f"Error --> Reference out : {output} obtained_result : {hex(out)} "
+
+
+@cocotb.test()
+
+async def main(dut):
+    await reset(dut)
+
+    #Enter the input message
+    file = open("sha.txt","r")
+    test_message = file.read()
+    
+    #Actual output from the DUT
+    out = await drive_input(test_message, dut) 
+
+    #Reference model output
+    output = await reference_out(test_message,dut) 
+
+    #Comparing the actual output with the reference model output
+    await scoreboard(out,output) 
+

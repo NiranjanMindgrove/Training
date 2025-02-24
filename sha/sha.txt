@@ -1,0 +1,8 @@
+What is the SHA-256 Algorithm?
+SHA 256 is a part of the SHA 2 family of algorithms, where SHA stands for Secure Hash Algorithm. Published in 2001, it was a joint effort between the NSA and NIST to introduce a successor to the SHA 1 family, which was slowly losing strength against brute force attacks.
+
+The significance of the 256 in the name stands for the final hash digest value, i.e. irrespective of the size of plaintext/cleartext, the hash value will always be 256 bits.
+
+The other algorithms in the SHA family are more or less similar to SHA 256. Now, look into knowing a little more about their guidelines.
+
+Embark on a transformative journey through our Cyber security Bootcamp, where you'll delve deep into the intricacies of cutting-edge technologies like the SHA-256 algorithm. Uncover the cryptographic principles that make this algorithm the cornerstone of blockchain security, all while honing your skills in defending against cyber threats.

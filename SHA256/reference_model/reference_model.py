@@ -2,18 +2,21 @@
 
 import hashlib
 
-# sha256_code = hashlib.sha256()
-# input = sha256_code.update(b"This is Mindgrove")
-# output = sha256_code.hexdigest()
-# print(output)
 
-def hash_256(filename):
-    sha256_code = hashlib.sha256()
+sha256_code = hashlib.sha256()
+input = sha256_code.update(b"This is Mindgrove")
+output = sha256_code.hexdigest()
+print((output))
 
-    with open(filename,'rb') as f:
-        for byte_block in iter(lambda: f.read(512),b''):
-            input = sha256_code.update(byte_block)
-    output = sha256_code.hexdigest()
-    return output 
+# def hash_256(filename):
+#     sha256_code = hashlib.sha256()
 
-print(hash_256("grep.txt"))
+#     with open(filename,'rb') as f:
+#         for byte_block in iter(lambda: f.read(512),b''):
+#             input = sha256_code.update(byte_block)
+#     inp_bytes = sha256_code.digest()
+#     print(inp_bytes)
+#     output = sha256_code.hexdigest()
+#     return output 
+
+# print(hash_256("grep.txt"))

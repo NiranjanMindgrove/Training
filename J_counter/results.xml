@@ -1,6 +1,6 @@
 <testsuites name="results">
   <testsuite name="all" package="all">
-    <property name="random_seed" value="1738968150" />
-    <testcase name="jcounter" classname="Jcounter_test" file="/home/niranjan/Documents/Training_Projects/HDL_Codes/J_counter/Jcounter_test.py" lineno="6" time="0.0049130916595458984" sim_time_ns="55.001" ratio_time="11194.784020187315" />
+    <property name="random_seed" value="1739375658" />
+    <testcase name="jcounter" classname="Jcounter_test" file="/home/niranjan/Documents/Training_Projects/HDL_Codes/J_counter/Jcounter_test.py" lineno="6" time="0.0048809051513671875" sim_time_ns="55.001" ratio_time="11268.60659945291" />
   </testsuite>
 </testsuites>

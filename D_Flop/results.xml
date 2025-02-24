@@ -1,6 +1,6 @@
 <testsuites name="results">
   <testsuite name="all" package="all">
-    <property name="random_seed" value="1738945334" />
-    <testcase name="dflop_test" classname="d_test" file="/home/niranjan/Documents/Training_Projects/HDL_Codes/D_Flop/d_test.py" lineno="12" time="0.003868579864501953" sim_time_ns="14.001" ratio_time="3619.1575436953035" />
+    <property name="random_seed" value="1739375542" />
+    <testcase name="dflop_test" classname="d_test" file="/home/niranjan/Documents/Training_Projects/HDL_Codes/D_Flop/d_test.py" lineno="12" time="0.0038504600524902344" sim_time_ns="14.001" ratio_time="3636.1888733126934" />
   </testsuite>
 </testsuites>

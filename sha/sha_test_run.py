@@ -76,7 +76,7 @@ async def single_chunk(dut):
 
     #Reference model output
     sha256_code = hashlib.sha256()
-    input = sha256_code.update(b"Hello, Cocotb!")
+    input = sha256_code.update(test_message.encode())
     output = sha256_code.hexdigest()
     output = bin(int(output,16))
 
