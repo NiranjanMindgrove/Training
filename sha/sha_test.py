@@ -2,29 +2,28 @@ import cocotb
 import cocotb.clock
 from cocotb.triggers import RisingEdge, FallingEdge
 from cocotb.clock import Clock
+from cocotb.regression import TestFactory
+import random as random
+import string
 import hashlib
+import math
 
 def encode_message(message):
     """Encodes a message into a 512-bit integer following the given rules."""
     message_bits = ''.join(format(ord(c), '08b') for c in message)  # Convert message to binary
     message_length = len(message_bits)
     print(f"Message length --> {message_length}")
+    n = math.ceil(message_length/512)
+    print(f"No of chunks --> {n}")
 
 
-    if message_length > 448:
-
-        #Chunks no of 512 bits
-        extra = (message_length+1)%512
-        padding = 448 - extra
-        total_bits = message_length + 1 + padding + 64
-        chunks = total_bits//512
-        print(f"Chunks --> {chunks}")
+    if message_length >= ( (512*n) - 64):
 
         # Append '1' to the message bits
         message_bits += '1'
         
         # Pad with '0' until reaching a multiple of 512 bits
-        message_bits = message_bits.ljust( (total_bits-64) , '0')
+        message_bits = message_bits.ljust( (512*(n+1)) - 64 , '0')
         print(f"Message bits --> {message_bits}")
         
         # Append 64-bit representation of message length
@@ -39,7 +38,7 @@ def encode_message(message):
         message_bits += '1'
         
         # Pad with '0' until reaching 448 bits
-        message_bits = message_bits.ljust(448, '0')
+        message_bits = message_bits.ljust( ( (512*(n)) - 64 ), '0')
         
         # Append 64-bit representation of message length
         length_bits = format(message_length, '064b')
@@ -103,8 +102,12 @@ async def drive_input(test_message, dut):
 
         await FallingEdge(dut.RDY_output_engine_get)
         dut.EN_output_engine_get.value = 0
+
+        await RisingEdge(dut.CLK)
+        
     out = bin(out) #Changing the output to binary format for comparison
     dut._log.info(f"Actual output --> {out}")
+
     return out
     
 async def reference_out(test_message,dut):
@@ -118,16 +121,13 @@ async def reference_out(test_message,dut):
 async def scoreboard(out,output):
     assert out == output, f"Error --> Reference out : {output} obtained_result : {hex(out)} "
 
-
-@cocotb.test()
-
-async def main(dut):
+async def main(dut, test_message):
     await reset(dut)
 
-    #Enter the input message
-    file = open("sha.txt","r")
-    test_message = file.read()
-    
+    # #Enter the input message
+    # file = open("sha.txt","r")
+    # test_message = file.read()
+
     #Actual output from the DUT
     out = await drive_input(test_message, dut) 
 
@@ -137,3 +137,15 @@ async def main(dut):
     #Comparing the actual output with the reference model output
     await scoreboard(out,output) 
 
+
+list1 = [48,54,55,56,63,64,65,118,119,120,121,122,123,184]
+msg = []
+for i in range(len(list1)):
+    characters = string.ascii_letters + string.digits 
+    x = ''.join(random.choices(characters, k = list1[i]))
+    msg.append(x)
+
+print(msg)
+tf = TestFactory(main)
+tf.add_option("test_message", msg)
+tf.generate_tests()
