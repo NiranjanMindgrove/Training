@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1741125571" />
+    <testcase name="main" classname="uart_test" file="/home/niranjan/Documents/Training_Projects/HDL_Codes/uart/verilog/uart_test.py" lineno="95" time="1.3747193813323975" sim_time_ns="22513.001" ratio_time="16376.433842214461" />
+  </testsuite>
+</testsuites>
