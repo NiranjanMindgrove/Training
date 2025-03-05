@@ -57,6 +57,14 @@ async def recieve_bits(dut,tx_msg,stop,parity,char_size,baud):
 async def transmit_bits(dut,rx_msg,stop,parity, char_size, baud):
     rx_msg_bin = bin(rx_msg)
     rx_msg_bin = rx_msg_bin[2:]
+
+    count_ones = rx_msg_bin.count("1")  # Count the number of 1s in the binary representation
+    if count_ones % 2 == 0:
+        even = 1
+        odd = 0
+    else:
+        odd = 1
+        even = 0
             
     if (parity == 0):
         if (char_size == 0):
@@ -83,27 +91,48 @@ async def transmit_bits(dut,rx_msg,stop,parity, char_size, baud):
 
     elif (parity >= 3):
           print("PARITY UNDEFINED")
-    else:
-          if (char_size == 0):
+    elif(parity == 1):
+            if (char_size == 0):
+                    data = 8
+                    data_size = 11
+                    rx_msg_bin = rx_msg_bin.rjust(data,'0')
+                    rx_msg_bin = '0' + rx_msg_bin + f"{odd}" +'1'
+            elif (char_size == 1):
+                    data = 7
+                    data_size = 10
+                    rx_msg_bin = rx_msg_bin.rjust(data,'0')
+                    rx_msg_bin = '0' + rx_msg_bin + f"{odd}" +'1'
+            elif (char_size == 2):
+                    data = 6
+                    data_size = 9
+                    rx_msg_bin = rx_msg_bin.rjust(data,'0')
+                    rx_msg_bin = '0' + rx_msg_bin + f"{odd}" +'1'
+            elif (char_size == 3):
+                    data = 5
+                    data_size = 8
+                    rx_msg_bin = rx_msg_bin.rjust(data,'0')
+                    rx_msg_bin = '0' + rx_msg_bin + f"{odd}" +'1'
+    elif(parity == 2):
+        if (char_size == 0):
                 data = 8
                 data_size = 11
                 rx_msg_bin = rx_msg_bin.rjust(data,'0')
-                rx_msg_bin = '0' + rx_msg_bin + f"{parity}" +'1'
-          elif (char_size == 1):
+                rx_msg_bin = '0' + rx_msg_bin + f"{even}" +'1'
+        elif (char_size == 1):
                 data = 7
                 data_size = 10
                 rx_msg_bin = rx_msg_bin.rjust(data,'0')
-                rx_msg_bin = '0' + rx_msg_bin + f"{parity}" +'1'
-          elif (char_size == 2):
+                rx_msg_bin = '0' + rx_msg_bin + f"{even}" +'1'
+        elif (char_size == 2):
                 data = 6
                 data_size = 9
                 rx_msg_bin = rx_msg_bin.rjust(data,'0')
-                rx_msg_bin = '0' + rx_msg_bin + f"{parity}" +'1'
-          elif (char_size == 3):
+                rx_msg_bin = '0' + rx_msg_bin + f"{even}" +'1'
+        elif (char_size == 3):
                 data = 5
                 data_size = 8
                 rx_msg_bin = rx_msg_bin.rjust(data,'0')
-                rx_msg_bin = '0' + rx_msg_bin + f"{parity}" +'1'
+                rx_msg_bin = '0' + rx_msg_bin + f"{even}" +'1'
 
     rate = (10 ** 9) / (16 * baud)
     bit1_in_nsecs = (1/rate) * (10 ** 9)
@@ -112,6 +141,6 @@ async def transmit_bits(dut,rx_msg,stop,parity, char_size, baud):
         dut.io_SIN.value = int(rx_msg_bin[i])
         await Timer(bit1_in_nsecs, units="ns")
         dut._log.info(f"Transmit message bits --> {dut.io_SIN.value}")
-    
+    await Timer(bit1_in_nsecs, units="ns") #Just giving it time to get the o/p
     return data_size
       
