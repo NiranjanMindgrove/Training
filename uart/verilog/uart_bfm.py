@@ -1,6 +1,6 @@
 import cocotb
 from cocotb.triggers import Timer, RisingEdge, FallingEdge
-from cocotb.clock import Clock
+
 
 async def recieve_bits(dut,tx_msg,stop,parity,char_size,baud):
     
@@ -10,6 +10,16 @@ async def recieve_bits(dut,tx_msg,stop,parity,char_size,baud):
     rate = (10 ** 9) / (16 * baud)
     bit1_in_nsecs = (1/rate) * (10 ** 9)
 
+    #PARITY CHECKER
+    tx_msg_bin = bin(tx_msg)
+    count_ones = tx_msg_bin.count("1")  # Count the number of 1s in the binary representation
+    if count_ones % 2 == 0:
+        even = 0
+        odd = 1
+    else:
+        odd = 0
+        even = 1
+    print(f"odd --> {odd} : Even --> {even}")
     if (parity == 0):
         if (char_size == 0):
                 data_size = 10
@@ -41,17 +51,27 @@ async def recieve_bits(dut,tx_msg,stop,parity,char_size,baud):
             if(stop == 1):
                 await Timer(0.5*bit1_in_nsecs, units = "ns")
             elif(stop == 2):
-                await Timer(1*bit1_in_nsecs, units = "ns")         
-    print(type(data))
-    
-    if(parity == 0):
-        data_str = "".join(str(i) for i in data[1:data_size-1])
-    else:
-        data_str = "".join(str(i) for i in data[1:data_size-2])
-    print(f"Data in string --> {data_str}")
-    data_int = int(data_str,2)
+                await Timer(1*bit1_in_nsecs, units = "ns") 
+        dut._log.info(f"DATA --> {data}")        
+    print(data)
 
-    assert (tx_msg) == (data_int) , f"Error TX --> {hex(tx_msg)} :: RX --> {hex(data_int)}"
+    if(char_size == 0):
+        if(parity == 0):
+            data_str = "".join(str(i) for i in data[1:data_size-1])
+        else:
+            data_str = "".join(str(i) for i in data[1:data_size-2])
+        print(f"Data in string --> {data_str}")
+        data_int = int(data_str,2)
+        dut._log.info(f"Transmitted Integer value from SOC --> {tx_msg}")
+        dut._log.info(f"Recieved Integer value in BFM --> {data_int}") 
+        assert (tx_msg) == (data_int) , f"Error TX --> {hex(tx_msg)} :: RX --> {hex(data_int)}"
+    
+    if(parity == 1): #Odd Parity
+          tx_soc_rx_bfm_parity = odd
+          assert data[-2] == odd , f"Error for Odd Parity --> Recieved Data's Parity -> {data[-2]} :: Parity from the given data in TX -> {odd}" 
+    elif(parity == 2): #Even Parity
+          tx_soc_rx_bfm_parity = even
+          assert data[-2] == even , f"Error for Even Parity --> Recieved Data's Parity -> {data[-2]} :: Parity from the given data in TX -> {odd}"
     return data
     
 async def transmit_bits(dut,rx_msg,stop,parity, char_size, baud):
@@ -60,11 +80,11 @@ async def transmit_bits(dut,rx_msg,stop,parity, char_size, baud):
 
     count_ones = rx_msg_bin.count("1")  # Count the number of 1s in the binary representation
     if count_ones % 2 == 0:
-        even = 1
-        odd = 0
-    else:
-        odd = 1
         even = 0
+        odd = 1
+    else:
+        odd = 0
+        even = 1
             
     if (parity == 0):
         if (char_size == 0):

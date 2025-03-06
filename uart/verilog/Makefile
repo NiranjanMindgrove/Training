@@ -8,6 +8,6 @@ WARNING_ARGS += -Wno -TIMESCALEMOD -Wno-WIDTH -Wno-UNOPT
 
 
 TOPLEVEL = mkuart
-MODULE = uart_test
+MODULE = uart_run
 
 include $(shell cocotb-config --makefiles)/Makefile.sim

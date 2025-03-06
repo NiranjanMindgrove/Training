@@ -1,6 +1,6 @@
 <testsuites name="results">
   <testsuite name="all" package="all">
-    <property name="random_seed" value="1741210127" />
-    <testcase name="main" classname="uart_test" file="/home/niranjan/Documents/Training_Projects/HDL_Codes/uart/verilog/uart_test.py" lineno="98" time="4.01810359954834" sim_time_ns="66785.001" ratio_time="16621.02515413168" />
+    <property name="random_seed" value="1741300365" />
+    <testcase name="main" classname="uart_run" file="/home/niranjan/Documents/Training_Projects/HDL_Codes/uart/verilog/uart_run.py" lineno="192" time="2.433279514312744" sim_time_ns="40677.001" ratio_time="16716.94548889046" />
   </testsuite>
 </testsuites>

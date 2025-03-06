@@ -103,6 +103,7 @@ async def main(dut):
 
     await reset(dut)
     dut.io_SIN.value = 1
+
     #Configure Baud Register
     baud = await baud_inp(dut,baud_rate)
 
@@ -144,6 +145,7 @@ async def main(dut):
             data1 =await data
             print(f"Data recieved in UART BFM --> {data1}")
 
+ 
     #Check status register for RX_not full
     status_rx_full = await read_reg(dut,0xC,1)
     
@@ -179,9 +181,11 @@ async def main(dut):
 async def inputs(dut):
 
     baud_rate = 921600
-    stop = 2
-    parity = 2
+    stop = 0
+    parity = 0
     char_size = 0
+     
+
     a = 1 << 3 #TX FIFO FULL BIT
     b = 1 << 5 #RX FIFO FULL BIT
     tx_msg_full = 12780
