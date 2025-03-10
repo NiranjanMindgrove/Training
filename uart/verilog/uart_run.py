@@ -1,8 +1,8 @@
 import cocotb
 from cocotb.triggers import Timer, RisingEdge, FallingEdge
 from cocotb.clock import Clock
-import uart_bfm
-
+import uart_bfm_1
+from cocotb.regression import TestFactory
 
 
 async def reset(dut):
@@ -66,138 +66,172 @@ async def TX_reg_soc(dut, tx_msg, char_size):
     dut.write_req_size.value = 0
 
     if(char_size == 0):
-        value = bin(tx_msg)
-        print(value)
-        value = value[2:]
-        print(value)
-        value = value.rjust(8,'0')
-        print(value)
-        value = value[::-1]
-        print(value)
+        value = format(tx_msg, "08b")[::-1]
+ 
         value_bin = int(value,2)
         print(f"Value in binary --> {value_bin}")
         dut.write_req_data.value = value_bin 
         dut._log.info(f"Transmit Data --> {value_bin:08b}")
-        await RisingEdge(dut.CLK)
-        dut.EN_write_req.value = 0
-    elif(char_size == 1):
-        value = bin(tx_msg)
-        print(value)
-        value = value[2:]
-        print(value)
-        value = value.rjust(8,'0')
-        print(value)
-        value = value[::-1]
-        print(value)
-        value = value[-1] + value[:-1]
-        print(f"Value after right shift -- > {value}")
-        value_bin = int(value,2)
-        print(value)
-        print(f"Value in binary --> {value_bin}")
-        dut.write_req_data.value = value_bin 
-        dut._log.info(f"Transmit Data --> {value_bin:08b}")
-        await RisingEdge(dut.CLK)
-        dut.EN_write_req.value = 0
-    elif(char_size == 2):
-        value = bin(tx_msg)
-        print(value)
-        value = value[2:]
-        print(value)
-        value = value.rjust(8,'0')
-        print(value)
-        value = value[::-1]
-        print(value)
-        value = value[-2:] + value[:-2]
-        print(f"Value after right shift -- > {value}")
-        value_bin = int(value,2)
-        print(value)
-        print(f"Value in binary --> {value_bin}")
-        dut.write_req_data.value = value_bin 
-        dut._log.info(f"Transmit Data --> {value_bin:08b}")
-        await RisingEdge(dut.CLK)
-        dut.EN_write_req.value = 0
-    elif(char_size == 3):
-        value = bin(tx_msg)
-        print(value)
-        value = value[2:]
-        print(value)
-        value = value.rjust(8,'0')
-        print(value)
-        value = value[::-1]
-        print(value)
-        value = value[-3:] + value[:-3]
-        print(f"Value after right shift -- > {value}")
-        value_bin = int(value,2)
-        print(value)
-        print(f"Value in binary --> {value_bin}")
-        dut.write_req_data.value = value_bin 
-        dut._log.info(f"Transmit Data --> {value_bin:08b}")
-        await RisingEdge(dut.CLK)
-        dut.EN_write_req.value = 0
         
+    else:
+        value = format(tx_msg, "08b")[::-1]
+        value = value[-(char_size)] + value[:-(char_size)] #Right shift Each bit to the corresponding character positions
 
+        print(f"Value after right shift -- > {value}")
+        value_bin = int(value,2)
+ 
+        print(f"Value in binary --> {value_bin}")
+        dut.write_req_data.value = value_bin 
+        dut._log.info(f"Transmit Data --> {value_bin:08b}")
+    await RisingEdge(dut.CLK)
+    dut.EN_write_req.value = 0
+    
 async def tx_bfm_rx_soc(dut, rx_msg, char_size):
     rx_reg = await read_reg(dut, 0x8,0)
     rx_reg = str(rx_reg)
     print(f"RX_rex binary --> {rx_reg}")
 
-    # if(char_size == 0):
     rx_reg = rx_reg[24+char_size:32]
     print(f"Before reversal --> {rx_reg}")
-    #     rx_reg = rx_reg.ljust(8,'0')
-    # elif(char_size == 1):
-    #     rx_reg = rx_reg[25:32]
-    #     print(f"Before reversal --> {rx_reg}")
-    #     rx_reg = rx_reg.ljust(7,'0')
-    # elif(char_size == 2):
-    #     rx_reg = rx_reg[26:32]
-    #     print(f"Before reversal --> {rx_reg}")
-    #     rx_reg = rx_reg.ljust(6,'0')
-    # elif(char_size == 3):
-    #     rx_reg = rx_reg[27:32]
-    #     print(f"Before reversal --> {rx_reg}")
-    #     rx_reg = rx_reg.ljust(5,'0')
 
     rx_reg = rx_reg[::-1]
     print(rx_reg)
     assert rx_msg == int(rx_reg,2), f"Error Sent message --> {rx_msg} :: Recieved message --> {rx_reg}"
     print("DATA RECIEVED SUCCESSFULLY FROM BFM TO RTL")
 
+async def transmitter(dut,a,tx_msg_full_list,char_size,stop,parity,baud):
 
-async def inputs(dut):
+    status_reg = await read_reg(dut, 0xC,1)
 
-    baud_rate = 921600
-    stop = 2
-    parity = 2
-    char_size = 3
-     
+    while( (a & status_reg) != 1):
+        print("TX FIFO FULL")
+        for i in tx_msg_full_list:
+            tx_msg_full = i
+            tx_msg_lst = []
+            dut._log.info(f"Input in Binary --> {bin(tx_msg_full)}")
+            tx_msg_full_bin = format(tx_msg_full, "b")
+            length = len(tx_msg_full_bin)
+                
+            padded_tx_msg = tx_msg_full_bin.zfill((length + (8-char_size-1)) // (8-char_size) * (8-char_size))
 
-    a = 1 << 3 #TX FIFO FULL BIT
-    b = 1 << 5 #RX FIFO FULL BIT
-    tx_msg_full = 127
-    c = 1<< 5
-    rx_msg_full = 127
+            for i in range(0,len(padded_tx_msg),8-char_size):
+                tx_msg_lst.append(padded_tx_msg[i:i+(8-char_size)])
+            print(tx_msg_lst)
 
-    dut._log.info(f"Data from SOC to BFM --> {bin(tx_msg_full)}")
-    dut._log.info(f"Data from BFM to SOC --> {bin(rx_msg_full)}")
+            for i in tx_msg_lst:
+                tx_msg = int(i,2)
 
-    return dut,baud_rate,stop,parity,char_size,a,b,c,tx_msg_full,rx_msg_full
+                data = cocotb.start_soon(uart_bfm_1.recieve_bits(dut,tx_msg,stop,parity,char_size, baud))
+                await TX_reg_soc(dut, tx_msg, char_size)   
 
-# async def scoreboard(dut, parity_error_bit, tx_soc_rx_bfm_parity, data1):
+                data1 =await data
+                print(f"Data recieved in UART BFM --> {data1}")
+        break
 
-#     assert parity_error_bit == 0 , f"Error in parity bit (Message sent from BFM to SOC)"
-#     assert tx_soc_rx_bfm_parity == data1[-2], f"Error in parity bit (Message sent from SOC to BFM)"
-
-
-@cocotb.test()
+async def reciever(dut,char_size,stop,parity,baud,c,rx_msg_full_list):
+    status_rx_full = await read_reg(dut,0xC,1)
     
-async def main(dut):
+    while ( (c & status_rx_full) != 1):
+        for i in rx_msg_full_list:
+            rx_msg_full = i
+            rx_msg_lst = []
+            
+            rx_msg_full_bin = format(rx_msg_full,"b")
+            dut._log.info(f"Message about to be transmitted from BFM --> {rx_msg_full_bin}")
+            length = len(rx_msg_full_bin)
+            
+            padded_rx_msg = rx_msg_full_bin.zfill((length + (8-char_size-1) ) // (8-char_size) * (8-char_size))
 
-    dut,baud_rate,stop,parity,char_size,a,b,c,tx_msg_full,rx_msg_full = await inputs(dut)
+            for i in range(0,len(padded_rx_msg),(8-char_size)):
+                rx_msg_lst.append(padded_rx_msg[i:i+((8-char_size))])
+            print(f"RX MSG LIST -- > {rx_msg_lst}")
+        
+            for i in rx_msg_lst:
+                rx_msg = int(i,2)
+                await uart_bfm_1.transmit_bits(dut,rx_msg,stop,parity, char_size,  baud)
+                await tx_bfm_rx_soc(dut, rx_msg, char_size)
+                parity_status = await read_reg(dut, 0xC, 1)
+                parity_error_bit = parity_status[-6]
+
+                assert parity_error_bit == 0, f"Error in Parity (Message from BFM to SOC)"
+    
+        break
+
+async def half_duplex(dut,a,tx_msg_full_list,char_size,stop,parity,baud,c,rx_msg_full_list):
+
+    #Read the status register for finding the fifo not full value
+    status_reg = await read_reg(dut, 0xC,1)
+
+    while( (a & status_reg) != 1):
+        print("TX FIFO FULL")
+        for i in tx_msg_full_list:
+            tx_msg_full = i
+            tx_msg_lst = []
+            dut._log.info(f"Input in Binary --> {bin(tx_msg_full)}")
+            tx_msg_full_bin = format(tx_msg_full, "b")
+            length = len(tx_msg_full_bin)
+                
+            padded_tx_msg = tx_msg_full_bin.zfill((length + (8-char_size-1)) // (8-char_size) * (8-char_size))
+
+            for i in range(0,len(padded_tx_msg),8-char_size):
+                tx_msg_lst.append(padded_tx_msg[i:i+(8-char_size)])
+            print(tx_msg_lst)
+
+            for i in tx_msg_lst:
+                tx_msg = int(i,2)
+
+                data = cocotb.start_soon(uart_bfm_1.recieve_bits(dut,tx_msg,stop,parity,char_size, baud))
+                await TX_reg_soc(dut, tx_msg, char_size)   
+
+                data1 =await data
+                print(f"Data recieved in UART BFM --> {data1}")
+        break
+
+
+    #Check status register for RX_not full
+    status_rx_full = await read_reg(dut,0xC,1)
+    
+    while ( (c & status_rx_full) != 1):
+        for i in rx_msg_full_list:
+            rx_msg_full = i
+            rx_msg_lst = []
+            
+            rx_msg_full_bin = format(rx_msg_full,"b")
+            dut._log.info(f"Message about to be transmitted from BFM --> {rx_msg_full_bin}")
+            length = len(rx_msg_full_bin)
+            
+            padded_rx_msg = rx_msg_full_bin.zfill((length + (8-char_size-1) ) // (8-char_size) * (8-char_size))
+
+            for i in range(0,len(padded_rx_msg),(8-char_size)):
+                rx_msg_lst.append(padded_rx_msg[i:i+((8-char_size))])
+            print(f"RX MSG LIST -- > {rx_msg_lst}")
+        
+            for i in rx_msg_lst:
+                rx_msg = int(i,2)
+                await uart_bfm_1.transmit_bits(dut,rx_msg,stop,parity, char_size,  baud)
+                await tx_bfm_rx_soc(dut, rx_msg, char_size)
+                parity_status = await read_reg(dut, 0xC, 1)
+                parity_error_bit = parity_status[-6]
+
+                assert parity_error_bit == 0, f"Error in Parity (Message from BFM to SOC)"
+    
+        break
+
+async def full_duplex(dut,a,tx_msg_full_list,char_size,stop,parity,baud,c,rx_msg_full_list):
+
+    cocotb.start_soon(transmitter(dut,a,tx_msg_full_list,char_size,stop,parity,baud))
+
+    await reciever(dut,char_size,stop,parity,baud,c,rx_msg_full_list)
+
+
+async def main(dut,baud_rate,stop,parity,char_size,tx_msg_full_list,rx_msg_full_list,mode):
 
     await reset(dut)
     dut.io_SIN.value = 1
 
+    a = 1 << 3 #TX FIFO FULL BIT
+    #RX FIFO FULL BIT
+    c = 1<< 5
     #Configure Baud Register
     baud = await baud_inp(dut,baud_rate)
 
@@ -207,119 +241,57 @@ async def main(dut):
 
     #Read Control register
     control_reg = await read_reg(dut,0x14,1)
-
-    #Read the status register for finding the fifo not full value
-    status_reg = await read_reg(dut, 0xC,1)
     
-    #Check if TX full bit is set 
-
-    if(a & status_reg):
-        print("TX FIFO FULL")
-    elif((b & status_reg)):
-        print("RX FIFO FULL")
+    if(mode == 0):
+        await transmitter(dut,a,tx_msg_full_list,char_size,stop,parity,baud)
+    elif(mode == 1):
+        await reciever(dut,char_size,stop,parity,baud,c,rx_msg_full_list)
+    elif(mode == 2):
+        await half_duplex(dut,a,tx_msg_full_list,char_size,stop,parity,baud,c,rx_msg_full_list)
     else:
-        print("TX FIFO not FULL")
-        tx_msg_lst = []
-        dut._log.info(f"Input in Binary --> {bin(tx_msg_full)}")
-        tx_msg_full_bin = bin(tx_msg_full)
-        tx_msg_full_bin = tx_msg_full_bin[2:]
-
-        if(char_size == 0):
-            length = len(tx_msg_full_bin)
-            padded_tx_msg = tx_msg_full_bin.zfill((length + 7) // 8 * 8)
-
-            for i in range(0,len(padded_tx_msg),8):
-                tx_msg_lst.append(padded_tx_msg[i:i+8])
-            print(tx_msg_lst)
-
-        elif(char_size == 1):
-            length = len(tx_msg_full_bin)
-            print("Entered in this loop")
-            padded_tx_msg = tx_msg_full_bin.zfill((length + 6) // 7 * 7)  # Pad to nearest multiple of 7
-
-            for i in range(0,len(padded_tx_msg),7):
-                tx_msg_lst.append(padded_tx_msg[i:i+7])
-            print(tx_msg_lst)
-
-        elif(char_size == 2):
-            length = len(tx_msg_full_bin)
-            print("Entered in this loop")
-            padded_tx_msg = tx_msg_full_bin.zfill((length + 5) // 6 * 6)  # Pad to nearest multiple of 7
-
-            for i in range(0,len(padded_tx_msg),6):
-                tx_msg_lst.append(padded_tx_msg[i:i+6])
-            print(tx_msg_lst)
-
-        elif(char_size == 3):
-            length = len(tx_msg_full_bin)
-            print("Entered in this loop")
-            padded_tx_msg = tx_msg_full_bin.zfill((length + 4) // 5 * 5)  # Pad to nearest multiple of 7
-
-            for i in range(0,len(padded_tx_msg),5):
-                tx_msg_lst.append(padded_tx_msg[i:i+5])
-            print(tx_msg_lst)
-
-        for i in tx_msg_lst:
-            tx_msg = int(i,2)
-
-            data = cocotb.start_soon(uart_bfm.recieve_bits(dut,tx_msg,stop,parity,char_size, baud))
-            await TX_reg_soc(dut, tx_msg, char_size)   
-
-            data1 =await data
-            print(f"Data recieved in UART BFM --> {data1}")
- 
-    #Check status register for RX_not full
-    status_rx_full = await read_reg(dut,0xC,1)
+        await full_duplex(dut,a,tx_msg_full_list,char_size,stop,parity,baud,c,rx_msg_full_list)
     
-    if(c & status_rx_full):
-        print("RX FULL, Reception failed")
-    else:
-        rx_msg_lst = []
-        
-        rx_msg_full_bin = bin(rx_msg_full)
-        dut._log.info(f"Message about to be transmitted from BFM --> {rx_msg_full_bin}")
-        
-        rx_msg_full_bin = rx_msg_full_bin[2:]
-        if(char_size == 0):
-            length = len(rx_msg_full_bin)
-            padded_rx_msg = rx_msg_full_bin.zfill((length + 7) // 8 * 8)
 
-            for i in range(0,len(padded_rx_msg),8):
-                tx_msg_lst.append(padded_rx_msg[i:i+8])
-            print(rx_msg_lst)
+async def inputs(dut,baud_rate,stop,parity,char_size,tx_msg_full,rx_msg_full,mode):
 
-        elif(char_size == 1):
-            length = len(rx_msg_full_bin)
-            print("Entered in this loop")
-            padded_rx_msg = rx_msg_full_bin.zfill((length + 6) // 7 * 7)  # Pad to nearest multiple of 7
-
-            for i in range(0,len(padded_rx_msg),7):
-                rx_msg_lst.append(padded_rx_msg[i:i+7])
-            print(f"RX MSG LIST -- > {rx_msg_lst}")
-
-        elif(char_size == 2):
-            length = len(rx_msg_full_bin)
-            print("Entered in this loop")
-            padded_rx_msg = rx_msg_full_bin.zfill((length + 5) // 6 * 6)  # Pad to nearest multiple of 6
-
-            for i in range(0,len(padded_rx_msg),6):
-                rx_msg_lst.append(padded_rx_msg[i:i+6])
-            print(f"RX MSG LIST -- > {rx_msg_lst}")
-        
-        elif(char_size == 3):
-            length = len(rx_msg_full_bin)
-            print("Entered in this loop")
-            padded_rx_msg = rx_msg_full_bin.zfill((length + 4) // 5 * 5)  # Pad to nearest multiple of 5
-
-            for i in range(0,len(padded_rx_msg),5):
-                rx_msg_lst.append(padded_rx_msg[i:i+5])
-            print(f"RX MSG LIST -- > {rx_msg_lst}")
+    await main(dut,baud_rate,stop,parity,char_size,tx_msg_full,rx_msg_full,mode)
+    for i in tx_msg_full:
+        dut._log.info(f"Data from SOC to BFM --> {bin(i)}")
+    for j in rx_msg_full:    
+        dut._log.info(f"Data from BFM to SOC --> {bin(j)}")
     
-    for i in rx_msg_lst:
-        rx_msg = int(i,2)
-        await uart_bfm.transmit_bits(dut,rx_msg,stop,parity, char_size,  baud)
-        await tx_bfm_rx_soc(dut, rx_msg, char_size)
-        parity_status = await read_reg(dut, 0xC, 1)
-        parity_error_bit = parity_status[-6]
+tf = TestFactory(inputs)
+tf.add_option("baud_rate",[62500000])
+tf.add_option("stop",[0,1,2])
+tf.add_option("parity",[0,1,2])
+tf.add_option("char_size",[0,1,2,3])
+tf.add_option(name = 'tx_msg_full', optionlist =[[0x8f,0xb5,0xc5,0xff], [0x01,0x05,0xab], [0xcb,0xbf,0x55], [0xca,0x23,0x81], [0x58,0xcf,0xad], [0xae,0xef,0xed], [0xeb,0xbc,0xbe], [0x12,0x57,0x89], [0xcd,0xba,0xbf], [0xfa,0xcd], [0xad,0x82,0xcd], [0xfb, 0xfa, 0xef], [0xff, 0xfa,0xfb], [0xaa,0xbb, 0xcc], [0xdd,0xee], [0x8f,0xb5,0xc5,0xff], [0x01,0x05,0xab], [0xcb,0xbf,0x55], [0xca,0x23,0x81], [0x58,0xcf,0xad], [0xae,0xef,0xed], [0xeb,0xbc,0xbe], [0x12,0x57,0x89], [0xcd,0xba,0xbf], [0xfa,0xcd], [0xad,0x82,0xcd], [0xfb, 0xfa, 0xef], [0xff, 0xfa,0xfb], [0xaa,0xbb, 0xcc], [0xdd,0xee]])
+#tf.add_option(name = 'rx_msg_full', optionlist =[[0x8f,0xb5,0xc5,0xff], [0x01,0x05,0xab], [0xcb,0xbf,0x55], [0xca,0x23,0x81], [0x58,0xcf,0xad], [0xae,0xef,0xed], [0xeb,0xbc,0xbe], [0x12,0x57,0x89], [0xcd,0xba,0xbf], [0xfa,0xcd], [0xad,0x82,0xcd], [0xfb, 0xfa, 0xef], [0xff, 0xfa,0xfb], [0xaa,0xbb, 0xcc], [0xdd,0xee], [0x8f,0xb5,0xc5,0xff], [0x01,0x05,0xab], [0xcb,0xbf,0x55], [0xca,0x23,0x81], [0x58,0xcf,0xad], [0xae,0xef,0xed], [0xeb,0xbc,0xbe], [0x12,0x57,0x89], [0xcd,0xba,0xbf], [0xfa,0xcd], [0xad,0x82,0xcd], [0xfb, 0xfa, 0xef], [0xff, 0xfa,0xfb], [0xaa,0xbb, 0xcc], [0xdd,0xee]])
 
-        assert parity_error_bit == 0, f"Error in Parity (Message from BFM to SOC)"
+# tf.add_option("tx_msg_full",[[0x20,127,321321,12,12,1,12,12,1,12,12,12,12,1,21,21,21,2,12,1,2,12,12,1,21,2,12,12,1,21,2,12,1,21,1,2,1,2,1,212,1,12,1,1,1,2,12,1,211211,1212,121221121,12,12,212,12,1,21,2]])
+tf.add_option("rx_msg_full",[[127,23132,12,5]])
+tf.add_option("mode",[0,1,2,3])
+tf.generate_tests()
+
+
+@cocotb.test()
+
+async def inputs(dut):
+
+    baud_rate = 921600
+    stop = 0
+    parity = 0
+    char_size = 0
+    mode = 0 #0 - transmitter; 1- reciever; 2- half duplex; 3 - full duplex
+     
+    tx_msg_full = [127,1234814]
+    rx_msg_full = [5]
+    
+    await main(dut,baud_rate,stop,parity,char_size,tx_msg_full,rx_msg_full,mode)
+
+    for i in tx_msg_full:
+        dut._log.info(f"Data from SOC to BFM --> {bin(i)}")
+    for j in rx_msg_full:    
+        dut._log.info(f"Data from BFM to SOC --> {bin(j)}")
+
+    

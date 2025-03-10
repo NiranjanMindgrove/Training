@@ -2,7 +2,7 @@ import cocotb
 from cocotb.triggers import Timer, RisingEdge, FallingEdge
 from cocotb.clock import Clock
 import math
-import uart_bfm
+import uart_bfm_1
 import string
 
 
@@ -139,7 +139,7 @@ async def main(dut):
         for i in tx_msg_lst:
             tx_msg = int(i,2)
 
-            data = cocotb.start_soon(uart_bfm.recieve_bits(dut,tx_msg,stop,parity,char_size, baud))
+            data = cocotb.start_soon(uart_bfm_1.recieve_bits(dut,tx_msg,stop,parity,char_size, baud))
             await TX_reg_soc(dut, tx_msg)   
 
             data1 =await data
@@ -167,7 +167,7 @@ async def main(dut):
     
     for i in rx_msg_lst:
         rx_msg = int(i,2)
-        await uart_bfm.transmit_bits(dut,rx_msg,stop,parity, char_size,  baud)
+        await uart_bfm_1.transmit_bits(dut,rx_msg,stop,parity, char_size,  baud)
         await tx_bfm_rx_soc(dut, rx_msg)
     # await Timer(100, units="us")
     #Read the RX reg
